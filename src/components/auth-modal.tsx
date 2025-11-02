@@ -11,14 +11,13 @@ import { X, Eye, EyeOff } from "lucide-react"
 import { useAuth } from "@/contexts/auth-context"
 
 interface AuthModalProps {
-  isOpen: boolean
-  onClose: () => void
   mode: "login" | "signup"
-  onSwitchMode: (mode: "login" | "signup") => void
+  onClose: () => void
   isDark?: boolean
 }
 
-export default function AuthModal({ isOpen, onClose, mode, onSwitchMode, isDark = false }: AuthModalProps) {
+export default function AuthModal({ mode, onClose, isDark = false }: AuthModalProps) {
+  const [currentMode, setCurrentMode] = useState<"login" | "signup">(mode)
   const [formData, setFormData] = useState({
     email: "",
     password: "",
@@ -38,7 +37,7 @@ export default function AuthModal({ isOpen, onClose, mode, onSwitchMode, isDark 
 
     try {
       let result
-      if (mode === "login") {
+      if (currentMode === "login") {
         result = await login(formData.email, formData.password)
       } else {
         result = await signup({
@@ -69,8 +68,6 @@ export default function AuthModal({ isOpen, onClose, mode, onSwitchMode, isDark 
     })
   }
 
-  if (!isOpen) return null
-
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center">
       <div className="fixed inset-0 bg-black/50" onClick={onClose} />
@@ -85,17 +82,17 @@ export default function AuthModal({ isOpen, onClose, mode, onSwitchMode, isDark 
             <X className="h-4 w-4" />
           </Button>
           <CardTitle className={isDark ? "text-white" : "text-gray-900"}>
-            {mode === "login" ? "Welcome Back" : "Create Account"}
+            {currentMode === "login" ? "Welcome Back" : "Create Account"}
           </CardTitle>
           <CardDescription className={isDark ? "text-gray-400" : "text-gray-600"}>
-            {mode === "login"
+            {currentMode === "login"
               ? "Sign in to your Tzeego account to access exclusive deals and cashback rewards"
               : "Join Tzeego to start earning cashback on your travel bookings"}
           </CardDescription>
         </CardHeader>
         <CardContent>
           <form onSubmit={handleSubmit} className="space-y-4">
-            {mode === "signup" && (
+            {currentMode === "signup" && (
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <Label htmlFor="firstName" className={isDark ? "text-gray-300" : "text-gray-700"}>
@@ -174,19 +171,19 @@ export default function AuthModal({ isOpen, onClose, mode, onSwitchMode, isDark 
             )}
 
             <Button type="submit" className="w-full bg-blue-600 hover:bg-blue-700 text-white" disabled={isLoading}>
-              {isLoading ? "Please wait..." : mode === "login" ? "Sign In" : "Create Account"}
+              {isLoading ? "Please wait..." : currentMode === "login" ? "Sign In" : "Create Account"}
             </Button>
           </form>
 
           <div className="mt-4 text-center">
             <p className={`text-sm ${isDark ? "text-gray-400" : "text-gray-600"}`}>
-              {mode === "login" ? "Don't have an account?" : "Already have an account?"}
+              {currentMode === "login" ? "Don't have an account?" : "Already have an account?"}
               <Button
                 variant="link"
-                onClick={() => onSwitchMode(mode === "login" ? "signup" : "login")}
+                onClick={() => setCurrentMode(currentMode === "login" ? "signup" : "login")}
                 className={`p-0 ml-1 h-auto font-normal ${isDark ? "text-blue-400 hover:text-blue-300" : "text-blue-600 hover:text-blue-700"}`}
               >
-                {mode === "login" ? "Sign up" : "Sign in"}
+                {currentMode === "login" ? "Sign up" : "Sign in"}
               </Button>
             </p>
           </div>
