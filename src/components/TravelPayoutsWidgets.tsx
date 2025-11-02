@@ -12,68 +12,49 @@ export default function TravelPayoutsWidgets({ activeTab, isDark }: TravelPayout
     let timeoutId: NodeJS.Timeout
 
     const loadWidgets = () => {
-      // Clear old content
       const containers = ["tp-widget-flights", "tp-widget-hotels", "tp-widget-cars", "tp-widget-esim"]
       containers.forEach((id) => {
         const el = document.getElementById(id)
         if (el) el.innerHTML = ""
       })
 
-      try {
-        timeoutId = setTimeout(() => {
-          if (activeTab === "Flights") loadFlightsWidget()
-          else if (activeTab === "Hotels") loadHotelsWidget()
-          else if (activeTab === "Rent cars") loadCarsWidget()
-          else if (activeTab === "E sim") loadEsimWidget()
-        }, 100)
-      } catch (error) {
-        console.error("Error loading TravelPayouts widgets:", error)
-      }
+      timeoutId = setTimeout(() => {
+        if (activeTab === "Flights") loadWidget("tp-widget-flights", "https://trpwdg.com/content?trs=446445&shmarker=661130.661130&locale=en&curr=USD&promo_id=4132&campaign_id=121")
+        else if (activeTab === "Hotels") loadWidget("tp-widget-hotels", "https://trpwdg.com/content?trs=446445&shmarker=661130.661130&lang=www&layout=S4279&promo_id=4038&campaign_id=121")
+        else if (activeTab === "Rent cars") loadWidget("tp-widget-cars", "https://trpwdg.com/content?trs=446445&shmarker=661130.661130&locale=en&promo_id=3873&campaign_id=117")
+        else if (activeTab === "E sim") loadWidget("tp-widget-esim", "https://trpwdg.com/content?trs=446445&shmarker=661130.661130&locale=en&promo_id=8588&campaign_id=541")
+      }, 200)
     }
 
-    const loadFlightsWidget = () => {
-      const container = document.getElementById("tp-widget-flights")
+    const loadWidget = (id: string, src: string) => {
+      const container = document.getElementById(id)
       if (!container) return
+
       const script = document.createElement("script")
       script.async = true
-      script.src =
-        "https://trpwdg.com/content?trs=446445&shmarker=661130.661130&locale=en&curr=USD&powered_by=true&promo_id=4132&campaign_id=121"
+      script.src = src
+      script.charset = "utf-8"
       container.appendChild(script)
+
+      // Stop redirection → open modal
+      setTimeout(() => {
+        const links = container.querySelectorAll("a")
+        links.forEach((link) => {
+          link.addEventListener("click", (e) => {
+            e.preventDefault()
+            const url = (e.currentTarget as HTMLAnchorElement).href
+            if (url) {
+              localStorage.setItem("travelpayouts_link", url)
+              const modalEvent = new CustomEvent("openTravelModal", { detail: url })
+              window.dispatchEvent(modalEvent)
+            }
+          })
+        })
+      }, 1500)
     }
 
-    const loadHotelsWidget = () => {
-      const container = document.getElementById("tp-widget-hotels")
-      if (!container) return
-      const script = document.createElement("script")
-      script.async = true
-      script.src =
-        "https://trpwdg.com/content?trs=446445&shmarker=661130.661130&lang=www&layout=S4279&powered_by=true&promo_id=4038&campaign_id=121"
-      container.appendChild(script)
-    }
-
-    const loadCarsWidget = () => {
-      const container = document.getElementById("tp-widget-cars")
-      if (!container) return
-      const script = document.createElement("script")
-      script.async = true
-      script.src =
-        "https://trpwdg.com/content?trs=446445&shmarker=661130.661130&locale=en&powered_by=true&promo_id=3873&campaign_id=117"
-      container.appendChild(script)
-    }
-
-    const loadEsimWidget = () => {
-      const container = document.getElementById("tp-widget-esim")
-      if (!container) return
-      const script = document.createElement("script")
-      script.async = true
-      script.src =
-        "https://trpwdg.com/content?trs=446445&shmarker=661130.661130&locale=en&powered_by=true&promo_id=8588&campaign_id=541"
-      container.appendChild(script)
-    }
-
-    const delayedLoad = setTimeout(loadWidgets, 100)
+    loadWidgets()
     return () => {
-      clearTimeout(delayedLoad)
       if (timeoutId) clearTimeout(timeoutId)
     }
   }, [activeTab, isDark])
