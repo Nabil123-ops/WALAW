@@ -11,7 +11,7 @@ export default function TravelPayoutsWidgets({ activeTab, isDark }: TravelPayout
   useEffect(() => {
     const containers = ["tp-widget-flights", "tp-widget-hotels", "tp-widget-cars", "tp-widget-esim"]
 
-    // Clear old widgets first
+    // Clear old content
     containers.forEach((id) => {
       const el = document.getElementById(id)
       if (el) el.innerHTML = ""
@@ -27,10 +27,9 @@ export default function TravelPayoutsWidgets({ activeTab, isDark }: TravelPayout
       script.charset = "utf-8"
       container.appendChild(script)
 
-      // 👇 Watch for widget loading — wait long enough so links exist
-      setTimeout(() => {
+      // ✅ MutationObserver — detects when widget creates new <a> links
+      const observer = new MutationObserver(() => {
         const links = container.querySelectorAll("a")
-
         links.forEach((link) => {
           link.addEventListener("click", (e) => {
             e.preventDefault()
@@ -44,7 +43,12 @@ export default function TravelPayoutsWidgets({ activeTab, isDark }: TravelPayout
             }
           })
         })
-      }, 3000) // wait 3 seconds so widget finishes rendering
+      })
+
+      observer.observe(container, {
+        childList: true,
+        subtree: true,
+      })
     }
 
     if (activeTab === "Flights")
