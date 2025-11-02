@@ -24,21 +24,53 @@ export default function ResultsModal({ isOpen, onClose, searchUrl, title, isDark
     setInternalTitle(title)
   }, [isOpen, searchUrl, title])
 
-  // ✅ NEW CODE — listens to popup open event (no redirect)
+  // ✅ Intercept any redirect attempt globally (in case widget redirects)
   useEffect(() => {
-    const handleOpen = (e: CustomEvent) => {
-      const link = e.detail || localStorage.getItem("travelpayouts_link")
-      if (link) {
-        setInternalUrl(link)
-        setInternalTitle(getModalTitleFromUrl(link))
-        setInternalOpen(true)
-        setIsLoading(true)
+    const interceptNavigation = (e: Event) => {
+      const target = e.target as HTMLElement
+      const anchor = target?.closest("a") as HTMLAnchorElement | null
+      if (anchor && anchor.href && anchor.href.startsWith("http")) {
+        e.preventDefault()
+        e.stopImmediatePropagation()
+        openModal(anchor.href)
       }
     }
 
+    const interceptForm = (e: Event) => {
+      const form = e.target as HTMLFormElement
+      const action = form?.getAttribute("action")
+      if (action && action.startsWith("http")) {
+        e.preventDefault()
+        e.stopImmediatePropagation()
+        openModal(action)
+      }
+    }
+
+    document.body.addEventListener("click", interceptNavigation, true)
+    document.body.addEventListener("submit", interceptForm, true)
+
+    return () => {
+      document.body.removeEventListener("click", interceptNavigation, true)
+      document.body.removeEventListener("submit", interceptForm, true)
+    }
+  }, [])
+
+  // ✅ handle event fired from widgets or intercepted click
+  useEffect(() => {
+    const handleOpen = (e: CustomEvent) => {
+      const link = e.detail || localStorage.getItem("travelpayouts_link")
+      if (link) openModal(link)
+    }
     window.addEventListener("openTravelModal", handleOpen as EventListener)
     return () => window.removeEventListener("openTravelModal", handleOpen as EventListener)
   }, [])
+
+  const openModal = (link: string) => {
+    setInternalUrl(link)
+    setInternalTitle(getModalTitleFromUrl(link))
+    setInternalOpen(true)
+    setIsLoading(true)
+  }
 
   const getModalTitleFromUrl = (url: string) => {
     if (url.includes("aviasales")) return "Flight Search Results"
@@ -51,9 +83,7 @@ export default function ResultsModal({ isOpen, onClose, searchUrl, title, isDark
   useEffect(() => {
     if (internalOpen) {
       setIsLoading(true)
-      const timer = setTimeout(() => {
-        setIsLoading(false)
-      }, 2000)
+      const timer = setTimeout(() => setIsLoading(false), 2000)
       return () => clearTimeout(timer)
     }
   }, [internalOpen, internalUrl])
@@ -65,13 +95,27 @@ export default function ResultsModal({ isOpen, onClose, searchUrl, title, isDark
 
   return (
     <Dialog open={internalOpen} onOpenChange={handleClose}>
-      <DialogContent className={`max-w-[95vw] w-full h-[90vh] p-0 ${isDark ? "bg-gray-900 border-gray-700" : "bg-white"}`}>
-        <DialogHeader className={`p-6 pb-4 border-b ${isDark ? "border-gray-700" : "border-gray-200"}`}>
-          <DialogTitle className={`text-2xl font-bold flex items-center gap-3 ${isDark ? "text-white" : "text-gray-900"}`}>
+      <DialogContent
+        className={`max-w-[95vw] w-full h-[90vh] p-0 ${
+          isDark ? "bg-gray-900 border-gray-700" : "bg-white"
+        }`}
+      >
+        <DialogHeader
+          className={`p-6 pb-4 border-b ${isDark ? "border-gray-700" : "border-gray-200"}`}
+        >
+          <DialogTitle
+            className={`text-2xl font-bold flex items-center gap-3 ${
+              isDark ? "text-white" : "text-gray-900"
+            }`}
+          >
             <ExternalLink className="h-6 w-6 text-blue-600" />
             {internalTitle}
           </DialogTitle>
-          <p className={`text-sm mt-2 ${isDark ? "text-gray-400" : "text-gray-600"}`}>
+          <p
+            className={`text-sm mt-2 ${
+              isDark ? "text-gray-400" : "text-gray-600"
+            }`}
+          >
             Browse results and click on any offer to complete your booking
           </p>
         </DialogHeader>
