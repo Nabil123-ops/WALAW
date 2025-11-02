@@ -24,36 +24,33 @@ export default function ResultsModal({ isOpen, onClose, searchUrl, title, isDark
     setInternalTitle(title)
   }, [isOpen, searchUrl, title])
 
+  // ✅ NEW CODE — listens to popup open event (no redirect)
   useEffect(() => {
-    // Listen for global travelpayouts search events
-    const handleSearch = (e: CustomEvent) => {
-      const url = e.detail.url
-      if (url) {
-        setInternalUrl(url)
-        setInternalTitle(getModalTitleFromUrl(url))
+    const handleOpen = (e: CustomEvent) => {
+      const link = e.detail || localStorage.getItem("travelpayouts_link")
+      if (link) {
+        setInternalUrl(link)
+        setInternalTitle(getModalTitleFromUrl(link))
         setInternalOpen(true)
         setIsLoading(true)
       }
     }
 
-    window.addEventListener('travelpayouts-search', handleSearch as EventListener)
-
-    return () => {
-      window.removeEventListener('travelpayouts-search', handleSearch as EventListener)
-    }
+    window.addEventListener("openTravelModal", handleOpen as EventListener)
+    return () => window.removeEventListener("openTravelModal", handleOpen as EventListener)
   }, [])
 
   const getModalTitleFromUrl = (url: string) => {
-    if (url.includes('aviasales')) return "Flight Search Results"
-    if (url.includes('hotellook')) return "Hotel Search Results"
-    if (url.includes('economybookings')) return "Car Rental Results"
+    if (url.includes("aviasales")) return "Flight Search Results"
+    if (url.includes("hotellook")) return "Hotel Search Results"
+    if (url.includes("economybookings")) return "Car Rental Results"
+    if (url.includes("esim")) return "eSIM Deals"
     return "Search Results"
   }
 
   useEffect(() => {
     if (internalOpen) {
       setIsLoading(true)
-      // Give iframe time to load
       const timer = setTimeout(() => {
         setIsLoading(false)
       }, 2000)
@@ -78,7 +75,7 @@ export default function ResultsModal({ isOpen, onClose, searchUrl, title, isDark
             Browse results and click on any offer to complete your booking
           </p>
         </DialogHeader>
-        
+
         <div className="relative w-full h-[calc(90vh-120px)]">
           {isLoading && (
             <div className="absolute inset-0 flex flex-col items-center justify-center bg-white/50 dark:bg-gray-900/50 backdrop-blur-sm z-10">
@@ -91,7 +88,7 @@ export default function ResultsModal({ isOpen, onClose, searchUrl, title, isDark
               </p>
             </div>
           )}
-          
+
           {internalUrl && (
             <iframe
               key={internalUrl}
